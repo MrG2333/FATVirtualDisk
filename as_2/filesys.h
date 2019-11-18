@@ -103,7 +103,8 @@ typedef struct filedescriptor {
 void format() ;
 void writedisk ( const char * filename ) ;
 MyFILE * myfopen(  const char * filename, const char * mode) ;
-
+void myfputc(int b, MyFILE * stream) ;
+void myfclose(MyFILE * stream) ;
 #endif
 
 /*

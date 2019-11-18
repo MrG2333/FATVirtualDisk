@@ -3,11 +3,11 @@
 int main()
 {
     format();
-    MyFILE * ptr_main;
-    ptr_main = myfopen("file_ter","w");
-    printf("%d",ptr_main->pos);
+    MyFILE * testingFile;
+    testingFile = myfopen("file_tet.txt","w");
+    myfputc('Z', testingFile);
+
 
     writedisk("virtualdiskC3_C1");
-
 return 0;
 }

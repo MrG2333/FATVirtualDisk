@@ -29,9 +29,15 @@ fatentry_t   currentDirIndex         = 0 ;
 
 void myfputc(int b, MyFILE * stream)
 {
-    printf("\n\n%s\n\n",stream->buffer.data);
+    if( strcmp(stream->mode,"w") == 0)
+    {
+    stream->buffer.data[stream->pos] = b;
+    stream->pos++;
+    }
+    writeblock(&stream->buffer.data, stream->blockno);
 
 }
+
 
 void myfclose(MyFILE * stream)
 {
@@ -41,11 +47,11 @@ void myfclose(MyFILE * stream)
     //free(stream);
 }
 
+
 MyFILE * myfopen( const char * filename, const char * mode )
 {
     MyFILE * file;
     file = malloc( sizeof(MyFILE) ) ;
-
 
     int fblocks = (MAXBLOCKS / FATENTRYCOUNT );
     if(mode == 'r'){
@@ -56,14 +62,11 @@ MyFILE * myfopen( const char * filename, const char * mode )
 
         strcpy(file->mode,mode);
 
-        printf("\n\n mode: %s \n\n",file->mode);
         int i=0;
         while(FAT[i]!=UNUSED) i++;
         file->blockno = i;       /// position in memory
-        printf("postion where write file: %d",i);
 
         file->pos = 0;
-        printf("blockno:   %d",file->blockno);
         strcpy(file->buffer.data + file->pos,filename);
 
         file->pos = strlen(filename)+1;
@@ -72,7 +75,6 @@ MyFILE * myfopen( const char * filename, const char * mode )
         copyFAT();
         writeblock(&file->buffer.data, file->blockno);
         }
-    printf("\n\n file_crowd: %d \n\n",file->pos);
 
     return(file);
 }
