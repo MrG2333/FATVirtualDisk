@@ -20,7 +20,6 @@
 #define MAXBLOCKS     1024
 #define BLOCKSIZE     1024
 #define FATENTRYCOUNT (BLOCKSIZE / sizeof(fatentry_t))
-
 #define DIRENTRYCOUNT ((BLOCKSIZE - (2*sizeof(int)) ) / sizeof(direntry_t))
 #define MAXNAME       256
 #define MAXPATHLENGTH 1024
@@ -110,9 +109,6 @@ void myfclose(MyFILE * stream) ;
 int myfgetc(MyFILE * stream) ;
 int retUnusedSector();
 int file_location(const char * filename);
-void mymkdir( char *path);
-void mylistdir(char * path);
-
 #endif
 
 /*

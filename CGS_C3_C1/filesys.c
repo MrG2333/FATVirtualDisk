@@ -34,6 +34,7 @@ int retUnusedSector()
     return i;
 }
 
+
 void myfputc(int b, MyFILE * stream)
 {
 
@@ -135,7 +136,7 @@ int file_location(const char * filename)
 diskblock_t search_block;
 search_block.dir = virtualDisk[rootDirIndex].dir;
 
-for(int i =0; i < DIRENTRYCOUNT;i++)
+for(int i =0; i < DIRENTRYCOUNT ;i++)
    {
     if( strcmp(search_block.dir.entrylist[i].name, filename) ==0)
         {
@@ -143,6 +144,7 @@ for(int i =0; i < DIRENTRYCOUNT;i++)
         }
    }
 return -1;
+
 }
 
 
@@ -155,7 +157,7 @@ MyFILE * myfopen( const char * filename, const char * mode )
 
     int f_loc = file_location(filename);
 
-    if( (f_loc == -1 && strcmp(mode,"w")==0) || (f_loc == -1 && strcmp(mode,"a")==0) )
+    if( f_loc == -1 && strcmp(mode,"w")==0)
     {
         ///File does not exist create it
         short int place_in_fat;
@@ -171,15 +173,12 @@ MyFILE * myfopen( const char * filename, const char * mode )
         entry_for_file.firstblock = place_in_fat;
         entry_for_file.modtime = time(0);
 
-
         diskblock_t writedirentry;
 
         writedirentry.dir.entrylist[writedirentry.dir.nextEntry] = entry_for_file;
         writedirentry.dir.nextEntry++;
 
         writeblock(&writedirentry,rootDirIndex);
-
-        ///TO DO : implement append
 
         strcpy(file->mode,mode);
         file->pos = 0;
@@ -196,6 +195,11 @@ MyFILE * myfopen( const char * filename, const char * mode )
         strcpy(file->name,filename);
         return file;
     }
+
+
+
+
+
     return(file);
 }
 
@@ -323,83 +327,6 @@ void format ( )
     rootDirIndex = 3;
 
 }
-
-void mylistdir(char * path)
-{
-    /// assume absolute
-    diskblock_t block_directory;
-
-    currentDirIndex = rootDirIndex;
-    block_directory.dir = virtualDisk[currentDirIndex].dir;
-
-
-    char path_tokenize[strlen(path)];
-    strcpy(path_tokenize,path);
-    char* path_dir = strtok(path_tokenize, "/");
-
-    while (path_dir != NULL) {
-
-        for(int i = 0 ;i <=DIRENTRYCOUNT;i++)
-        {
-            if(strcmp(block_directory.dir.entrylist[i].name,path_dir ))
-            {
-                block_directory.dir = virtualDisk[block_directory.dir.entrylist[i].firstblock].dir;
-                break;
-            }
-        }
-        path_dir = strtok(NULL, "/");
-    }
-    for(int i = 0; i< DIRENTRYCOUNT;i++)
-    {
-        if(strcmp(block_directory.dir.entrylist[i].name,"") != 0)
-            printf("files in list: %s",block_directory.dir.entrylist[i].name);
-    }
-
-}
-
-
-void mymkdir(char * path)
-{
-    direntry_t entry_directory;
-    diskblock_t block_directory;
-    short int unusedSector;
-
-
-    char path_tokenize[strlen(path)];
-    strcpy(path_tokenize,path);
-
-    currentDirIndex = rootDirIndex;
-    block_directory.dir = virtualDisk[currentDirIndex].dir;
-
-    char* path_dir = strtok(path_tokenize, "/");
-
-    while (path_dir != NULL) {
-
-
-
-        unusedSector = retUnusedSector();
-
-        FAT[unusedSector]=ENDOFCHAIN;
-        copyFAT();
-
-        entry_directory.firstblock = unusedSector;
-        strcpy(entry_directory.name,path_dir);
-        entry_directory.modtime = time(0);
-        entry_directory.isdir = 1;
-        entry_directory.unused = 1;
-        block_directory.dir.isdir=1;
-        block_directory.dir.entrylist[block_directory.dir.nextEntry] = entry_directory;
-        block_directory.dir.nextEntry++;
-
-        writeblock(&block_directory,currentDirIndex);
-
-        currentDirIndex = unusedSector;
-        block_directory.dir = virtualDisk[currentDirIndex].dir;
-
-        path_dir = strtok(NULL, "/");
-    }
-}
-
 
 
 /* use this for testing
