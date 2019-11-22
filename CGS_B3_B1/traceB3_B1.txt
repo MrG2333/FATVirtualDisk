@@ -1,2 +1,12 @@
+> format start
+> format stop
+> mymkdir start 
+> mymkdir stop
+> mylistdir start
+> mylistdir stop
 My list dir:  mythirddir 
+> myfopen start
+> myfopen stop
+> mylistdir start
+> mylistdir stop
 My list dir:  mythirddir  testfile.txt 

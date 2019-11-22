@@ -15,7 +15,7 @@ fatentry_t   FAT         [MAXBLOCKS] ;           // define a file allocation tab
 fatentry_t   rootDirIndex            = 0 ;       // rootDir will be set by format
 direntry_t * currentDir              = NULL ;
 fatentry_t   currentDirIndex         = 0 ;
-int number_dir_entries = 1;
+int number_dir_entries = 0 ;
  /*
   *
   * File management functions
@@ -174,7 +174,8 @@ dirblock_t file_location(const char * path)
 
 MyFILE * myfopen( const char * filename, const char * mode )
 {
-    MyFILE * file;
+    printf("> myfopen start\n");
+	MyFILE * file;
     file = malloc( sizeof(MyFILE) ) ;
     int fblocks = (MAXBLOCKS / FATENTRYCOUNT );
 
@@ -229,8 +230,10 @@ MyFILE * myfopen( const char * filename, const char * mode )
         file->pos = 0;
         file->blockno = virtualDisk[rootDirIndex].dir.entrylist[f_loc].firstblock;
         strcpy(file->name,filename);
-        return file;
+    	printf("> myfopen stop\n");
+		return file;
     }
+	printf("> myfopen stop\n");
     return(file);
 }
 
@@ -306,6 +309,7 @@ void writeblock ( diskblock_t * block, int block_address )
 
 void format ( )
 {
+	printf("> format start\n");
    diskblock_t block ;
    direntry_t  rootDir ;                // Create a root directory
    int         pos             = 0 ;
@@ -353,12 +357,13 @@ void format ( )
     FAT[3] = ENDOFCHAIN;
     copyFAT();
     rootDirIndex = 3;
-
+	printf("> format stop\n");
 }
 
 char ** mylistdir(char * path)
 {
     /// assume absolute
+	printf("> mylistdir start\n");
     diskblock_t block_directory;
 
     currentDirIndex = rootDirIndex;
@@ -395,13 +400,15 @@ char ** mylistdir(char * path)
 
 
     }
-    return ptr_ptr_file_list;
-
+    printf("> mylistdir stop\n");
+	return ptr_ptr_file_list;
 }
 
 
 void mymkdir(char * path)
 {
+	printf("> mymkdir start \n");
+	
     direntry_t entry_directory;
     diskblock_t block_directory;
     short int unusedSector;
@@ -438,6 +445,7 @@ void mymkdir(char * path)
         currentDirIndex = unusedSector;
         block_directory.dir = virtualDisk[currentDirIndex].dir;
     }
+	printf("> mymkdir stop\n");
 }
 
 
