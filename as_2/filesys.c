@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include "filesys.h"
 
 
@@ -15,7 +16,7 @@ fatentry_t   FAT         [MAXBLOCKS] ;           // define a file allocation tab
 fatentry_t   rootDirIndex            = 0 ;       // rootDir will be set by format
 direntry_t * currentDir              = NULL ;
 fatentry_t   currentDirIndex         = 0 ;
-
+fatentry_t   realDirblockno          = 0 ;
  /*
   *
   * File management functions
@@ -157,9 +158,16 @@ return -1;
 
 dirblock_t file_location(const char * path)
 {
-    diskblock_t search_block;
 
-    search_block.dir = virtualDisk[rootDirIndex].dir;
+    diskblock_t search_block;
+    int found = 0;
+
+    if(path[0] == '/')
+        currentDirIndex = rootDirIndex;
+    else
+        currentDirIndex = realDirblockno;
+
+    search_block.dir = virtualDisk[currentDirIndex].dir;
 
     char path_tokenize[strlen(path)];
     strcpy(path_tokenize,path);
@@ -172,13 +180,18 @@ dirblock_t file_location(const char * path)
 
         for(int i=0; i < DIRENTRYCOUNT;i++){
                 if(strcmp(search_block.dir.entrylist[i].name,path_dir) == 0 && search_block.dir.entrylist[i].isdir == 1){
+                    found = 1;
                     currentDirIndex = search_block.dir.entrylist[i].firstblock;
                     search_block.dir = virtualDisk[currentDirIndex].dir;
                 }
             }
     }
 
+
     return search_block.dir;
+
+
+
 }
 
 
@@ -187,13 +200,21 @@ MyFILE * myfopen( const char * filename, const char * mode )
 {
     printf("> myfopen start\n");
 	MyFILE * file;
+
     file = malloc( sizeof(MyFILE) ) ;
     int fblocks = (MAXBLOCKS / FATENTRYCOUNT );
 
-    int f_loc = file_in_directory(virtualDisk[rootDirIndex].dir, filename);
+    if(filename[0]=='/')
+        currentDirIndex = rootDirIndex;
+    else
+        currentDirIndex = realDirblockno;
+
+
+    int f_loc = file_in_directory(virtualDisk[currentDirIndex].dir, filename);
 
     if( (f_loc == -1 && strcmp(mode,"w")==0) || (f_loc == -1 && strcmp(mode,"a")==0) )
     {
+
         ///File does not exist create it
         short int place_in_fat;
         place_in_fat = retUnusedSector();
@@ -204,8 +225,8 @@ MyFILE * myfopen( const char * filename, const char * mode )
         entry_for_file.filelength = 0;      ///EOF at the end
         entry_for_file.isdir = 0;
 
-        char * name_from_path;
-        int pos_last_slash;
+        char * name_from_path=NULL;
+        int pos_last_slash=0;
 
         for(int i = 0;i<strlen(filename); i++){
             if(filename[i] == '/')  pos_last_slash = i+1;
@@ -219,15 +240,19 @@ MyFILE * myfopen( const char * filename, const char * mode )
 
         diskblock_t writedirentry;
 
-        writedirentry.dir = file_location(filename) ;           ///file name becomes path
+        writedirentry.dir = file_location(filename) ;
+
 
         if(writedirentry.dir.nextEntry == 3)
-            writedirentry.dir = expandDirectory(writedirentry.dir);
-
+            if(FAT[writedirentry.dir.start] != ENDOFCHAIN)
+                writedirentry.dir = virtualDisk[FAT[writedirentry.dir.start]].dir;
+            else
+                writedirentry.dir = expandDirectory(writedirentry.dir);
 
         writedirentry.dir.entrylist[writedirentry.dir.nextEntry] = entry_for_file;
         writedirentry.dir.nextEntry++;
-        printf("currentDIrIndex %d",currentDirIndex);
+
+
         writeblock(&writedirentry, writedirentry.dir.start);
 
         ///TO DO : implement append
@@ -237,8 +262,6 @@ MyFILE * myfopen( const char * filename, const char * mode )
         file->blockno = place_in_fat;
         strcpy(file->name,filename+pos_last_slash);
         file->dir_start = currentDirIndex;
-
-
 
     }
     else if (f_loc != -1 && strcmp(mode,"r") == 0 ){
@@ -292,25 +315,6 @@ void writeblock ( diskblock_t * block, int block_address )
 }
 
 
-/* read and write FAT
- *
- * please note: a FAT entry is a short, this is a 16-bit word, or 2 bytes
- *              our blocksize for the virtual disk is 1024, therefore
- *              we can store 512 FAT entries in one block
- *
- *              how many disk blocks do we need to store the complete FAT:
- *              - our virtual disk has MAXBLOCKS blocks, which is currently 1024
- *                each block is 1024 bytes long
- *              - our FAT has MAXBLOCKS entries, which is currently 1024
- *                each FAT entry is a fatentry_t, which is currently 2 bytes
- *              - we need (MAXBLOCKS /(BLOCKSIZE / sizeof(fatentry_t))) blocks to store the
- *                FAT
- *              - each block can hold (BLOCKSIZE / sizeof(fatentry_t)) fat entries
- */
-
-/* implement format()
- */
-
  void copyFAT()
 {
     diskblock_t block;
@@ -321,6 +325,51 @@ void writeblock ( diskblock_t * block, int block_address )
             block.fat[j] = FAT[j + FATENTRYCOUNT*i];
         writeblock(&block,i+1);     ///first block is reserved
         }
+}
+
+void mychdir(char * path)
+{
+    printf("> mychdir start\n");
+    int dirIndexer;
+    if(path[0] == '/')
+        dirIndexer = rootDirIndex;
+    else
+        dirIndexer = realDirblockno;
+
+    ///navigate trough the directories to the wanted one end up in up in the directory block
+
+    diskblock_t navigating_disk;
+    navigating_disk  =  virtualDisk[dirIndexer];
+
+    char path_tokenize[strlen(path)];
+    strcpy(path_tokenize,path);
+    char* path_dir;
+    char* rest = path_tokenize;
+    int check_dir = 0;
+    check_dir = navigating_disk.dir.start;
+
+    while ((path_dir = strtok_r(rest, "/", &rest))){
+        //while(check_dir != 0)
+        //{
+
+            for(int i=0;i<=DIRENTRYCOUNT;i++)
+            {
+                if(strcmp(navigating_disk.dir.entrylist[i].name,path_dir)==0)
+                {
+                    navigating_disk = virtualDisk[ navigating_disk.dir.entrylist[i].firstblock ];
+
+                    break ;
+                }
+            //}
+            //check_dir = FAT[check_dir];
+          //  navigating_disk = virtualDisk[check_dir];
+        }
+
+    }
+    realDirblockno = navigating_disk.dir.entrylist[0].firstblock;
+
+
+    printf("> mychdir stop\n");
 }
 
 
@@ -381,7 +430,7 @@ void format ( )
     FAT[3] = ENDOFCHAIN;
     copyFAT();
     rootDirIndex = 3;
-
+    realDirblockno = 3;
 	printf("> format stop\n");
 }
 
@@ -392,7 +441,10 @@ char ** mylistdir(char * path)
 
     diskblock_t block_directory;
 
-    currentDirIndex = rootDirIndex;
+    if(path[0] == '/')
+        currentDirIndex = rootDirIndex;
+    else
+        currentDirIndex = realDirblockno;
     block_directory.dir = virtualDisk[currentDirIndex].dir;
     //for(int i = 0; i< DIRENTRYCOUNT;i++)
     //    printf("check the entries in the current directory %s\n",block_directory.dir.entrylist[i].name);
@@ -403,7 +455,7 @@ char ** mylistdir(char * path)
 
     char* path_dir;
     char* rest = path_tokenize;
-
+    ///TO DO: Make it look into the expansion while returning the head of directory
     while ((path_dir = strtok_r(rest, "/", &rest))){
         for(int i = 0 ;i <=DIRENTRYCOUNT;i++)
         {
@@ -424,7 +476,7 @@ char ** mylistdir(char * path)
     int lst_counter=0;
     int check_dir;
     check_dir = block_directory.dir.start;
-    printf("Check dir is: %d",check_dir);
+
 
     block_directory.dir = virtualDisk[check_dir].dir;
 
@@ -437,7 +489,7 @@ char ** mylistdir(char * path)
             strcpy(array_found_elements[lst_counter],block_directory.dir.entrylist[i].name);
             ptr_ptr_file_list[lst_counter] = &array_found_elements[lst_counter];
             lst_counter++;
-            printf("entry : %d = %s\n",i,ptr_ptr_file_list[i]);
+
             }
     }
     check_dir = FAT[check_dir];
@@ -467,8 +519,6 @@ dirblock_t expandDirectory(dirblock_t dir_to_epxand)
 }
 
 
-
-
 void mymkdir(char * path)
 {
 	printf("> mymkdir start \n");
@@ -484,7 +534,11 @@ void mymkdir(char * path)
     char path_tokenize[strlen(path)];
     strcpy(path_tokenize,path);
 
-    currentDirIndex = rootDirIndex;
+
+    if(path[0] == '/')
+        currentDirIndex = rootDirIndex;
+    else
+        currentDirIndex = realDirblockno;
     block_directory.dir = virtualDisk[currentDirIndex].dir;
 
     char* path_dir;
@@ -542,20 +596,8 @@ void mymkdir(char * path)
         block_directory.dir.entrylist[1] = to_parent;
         block_directory.dir.nextEntry++;
 
-
-        printf("block_directory in entrylist[0] %s\n",block_directory.dir.entrylist[0].name);
         writeblock(&block_directory,currentDirIndex);
 
     }
 	printf("> mymkdir stop\n");
-}
-
-
-
-/* use this for testing
- */
-
-void printBlock ( int blockIndex )
-{
-   printf ( "virtualdisk[%d] = %s\n", blockIndex, virtualDisk[blockIndex].data ) ;
 }

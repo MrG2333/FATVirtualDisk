@@ -110,13 +110,13 @@ MyFILE * myfopen(  const char * filename, const char * mode) ;
 void myfputc(int b, MyFILE * stream) ;
 void myfclose(MyFILE * stream) ;
 int myfgetc(MyFILE * stream) ;
-int retUnusedSector();
-dirblock_t file_location(const char * filename);
-int file_in_directory(dirblock_t,const char * filename);
-void mymkdir( char *path);
-char ** mylistdir(char * path);
-dirblock_t expandDirectory(dirblock_t dir_to_expand);
-
+int retUnusedSector() ;
+dirblock_t file_location(const char * filename) ;
+int file_in_directory(dirblock_t,const char * filename) ;
+void mymkdir( char *path) ;
+char ** mylistdir(char * path) ;
+dirblock_t expandDirectory(dirblock_t dir_to_expand) ;
+void mychdir(char * path) ;
 #endif
 
 /*
