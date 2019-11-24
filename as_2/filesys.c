@@ -108,6 +108,7 @@ int myfgetc(MyFILE * stream)
 void myfclose(MyFILE * stream)
 {
     ///if there is no space for EOF go to the next block and place EOF
+    printf("> myfclose start\n");
     short int unused_sector;
     if(stream->pos == BLOCKSIZE)
     {
@@ -139,6 +140,7 @@ void myfclose(MyFILE * stream)
 
     writeblock(&stream->buffer,stream->blockno); ///ASSUME ENOUGH SPACE EXISTS
     free(stream);
+    printf("> myfclose stop\n");
 }
 
 int file_in_directory( dirblock_t local_dir ,const char * filename )
@@ -239,9 +241,8 @@ MyFILE * myfopen( const char * filename, const char * mode )
 
 
         diskblock_t writedirentry;
-
+        for(int i=0;i<BLOCKSIZE;i++) writedirentry.data[i]='\0';
         writedirentry.dir = file_location(filename) ;
-
 
         if(writedirentry.dir.nextEntry == 3)
             if(FAT[writedirentry.dir.start] != ENDOFCHAIN)
@@ -262,7 +263,7 @@ MyFILE * myfopen( const char * filename, const char * mode )
         file->blockno = place_in_fat;
         strcpy(file->name,filename+pos_last_slash);
         file->dir_start = currentDirIndex;
-
+        for(int i=0;i<BLOCKSIZE;i++) file->buffer.data[i]='\0';
     }
     else if (f_loc != -1 && strcmp(mode,"r") == 0 ){
 
@@ -528,6 +529,7 @@ void mymkdir(char * path)
     direntry_t to_itself;               ///I have the dirblock.start so this is kinda useless
     direntry_t to_parent;
     diskblock_t block_directory;
+    for(int i=0;i<BLOCKSIZE;i++) block_directory.data[i]='\0';
     short int unusedSector;
 
 
@@ -539,6 +541,7 @@ void mymkdir(char * path)
         currentDirIndex = rootDirIndex;
     else
         currentDirIndex = realDirblockno;
+    for(int i=0;i<BLOCKSIZE;i++) block_directory.data[i]='\0';
     block_directory.dir = virtualDisk[currentDirIndex].dir;
 
     char* path_dir;
@@ -584,7 +587,7 @@ void mymkdir(char * path)
         to_itself.unused=1;
         to_parent.unused=1;
         to_itself.modtime=time(0);
-
+        for(int i=0;i<BLOCKSIZE;i++) block_directory.data[i]='\0';
         block_directory.dir = virtualDisk[currentDirIndex].dir;
 
         block_directory.dir.start = currentDirIndex;

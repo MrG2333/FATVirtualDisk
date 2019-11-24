@@ -3,42 +3,55 @@
 
 int main()
 {
-
-    format();
-    mymkdir("/myfirstdir/myseconddir/mythird");
+    MyFILE * file1;
+    MyFILE * file2;
+    MyFILE * file3;
 
     char ** list;
-    list = mylistdir("/myfirstdir/myseconddir");
-    printf("My list dir: ");
-    for(int i = 0; list[i]!=NULL;i++ ) printf(" %s ",list[i]);
-    printf("\n");
-    MyFILE * testingFile;
-    testingFile = myfopen("/myfirstdir/myseconddir/testfile.txt","w");
 
-    myfputc('A',testingFile);
-    myfclose(testingFile);
+    format();
+    mymkdir("/firstdir/seconddir");
 
-    list = mylistdir("/myfirstdir/myseconddir");
-    printf("My list dir: ");
-    for(int i = 0; list[i]!=NULL;i++ ) printf(" %s ",list[i]);
-    printf("\n");
-    free(list);
+    file1 = myfopen("/firstdir/seconddir/testfile1.txt","w");
+    myfputc('C',file1);
+    myfputc('S',file1);
+    myfputc('3',file1);
+    myfputc('0',file1);
+    myfputc('2',file1);
+    myfputc('6',file1);
+    myfclose(file1);
 
-    mychdir("/myfirstdir/myseconddir");
-    MyFILE * testingFile2;
-    testingFile2 = myfopen("testfile2.txt","w");
+    list = mylistdir("/firstdir/seconddir");
+    printf("\n\n My listdir list: ");
+    for(int i=0;list[i]!=NULL;i++) printf("%s ",list[i]);
+    printf("\n\n");
 
-    myfputc('T',testingFile2);
-    myfputc('T',testingFile2);
-    myfputc('T',testingFile2);
+    mychdir("/firstdir/seconddir");
 
-    myfclose(testingFile);
-    list = mylistdir("/myfirstdir/myseconddir");
-    printf("My list dir: ");
-    for(int i = 0; list[i]!=NULL;i++ ) printf(" %s ",list[i]);
+    list = mylistdir(".");
+    printf("\n\n My listdir list: ");
+    for(int i=0;list[i]!=NULL;i++) printf("%s ",list[i]);
+    printf("\n\n");
 
+    file2 = myfopen("testfile2.txt","w");
+    myfputc('W',file2);
+    myfputc('I',file2);
+    myfputc('N',file2);
+    myfputc('T',file2);
+    myfputc('E',file2);
+    myfputc('R',file2);
+    myfclose(file2);
 
-    writedisk("virtualdiskA5_A1");
+    mymkdir("third");
+
+    file3 = myfopen("third/testfile3.txt","w");
+    myfputc('A',file3);
+    myfputc('U',file3);
+    myfputc('C',file3);
+    myfputc('S',file3);
+    myfclose(file3);
+
+    writedisk("virtualdiskA5_A1_a");
 
 return 0;
 }
