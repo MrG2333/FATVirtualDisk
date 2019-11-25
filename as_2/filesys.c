@@ -215,6 +215,7 @@ dirblock_t file_location(const char * path, int filename_start)
 
 void myremdir(char * dirname)
 {
+    printf("> myremdir start\n");
     diskblock_t navigating_directory;
 
     ///this has to go to the parrent assume user does not try to delete root
@@ -269,6 +270,7 @@ void myremdir(char * dirname)
 
         }
     }
+    printf("> myremdir stop\n");
 }
 
 void myremove(char * pathfile)
@@ -332,7 +334,6 @@ void myremove(char * pathfile)
 
                     for(int j=0;j<fat_chain_counter;j++)
                     {
-                        printf("fat_checker: %d",fat_chain_to_unused[j]);
 
                         FAT[ fat_chain_to_unused[j] ]=UNUSED;
 

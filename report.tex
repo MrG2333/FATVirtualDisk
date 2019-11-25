@@ -31,7 +31,11 @@
 	
 	
 	\subsection*{Details on the inner workings of particular functions.} 
-	\subsection*{myfopen}
+	\subsection*{myfopen()}
 		If the a file with the same name already exists it opens it otherwise it creates it. If the directories specified in the path do not exist then they are created and then the file si made.
-	
+	\subsection*{mychdir()}
+		It has a currentDirectory integer that represents the block number of current directory. When called it changes the value of variable pointing to the current directory to point to the new current directory.
+	\subsection*{mymkdir()}
+		My mkdir was initialy done with directory expansion in mind so that more entries could be added. After noticing that was not stated that points are given for this in the tasks further implementation of this has stopped. However if required the directory can be expanded either if a new entry is required by myfopen or by mymkdir.
+		Some parts of the memory blocks ocupied by directories are not initialized and some form of clutter might appear. However it is tied to the unused space of a directory and the directory structure in memory can always be seen at the begginig of a new blocks. After the deletion of a directory or a entry. 
 \end{document}

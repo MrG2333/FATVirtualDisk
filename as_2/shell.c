@@ -106,7 +106,7 @@ int main()
     myremdir("seconddir");
     mychdir("/");
     myremdir("firstdir");
-    printf("\n\n Write part 'c' to the real disk\n\n");
+    printf("\n\n Write part 'd' to the real disk\n\n");
 
     writedisk("virtualdiskA5_A1_d");
 return 0;
