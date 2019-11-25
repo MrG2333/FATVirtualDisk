@@ -79,6 +79,7 @@ void myfputc(int b, MyFILE * stream)
 
 int myfgetc(MyFILE * stream)
 {
+
     int f_loc = file_in_directory(virtualDisk[stream->dir_start].dir,stream->name);
 
     int f_length = virtualDisk[stream->dir_start].dir.entrylist[f_loc].filelength;
@@ -93,14 +94,14 @@ int myfgetc(MyFILE * stream)
         stream->blockno = FAT[stream->blockno];
         stream->pos = 0;
     }
-
-    if(stream->pos + (bln*BLOCKSIZE) <= f_length)
+     if(stream->pos + (bln*BLOCKSIZE) <= f_length)
         {
             c_to_return =virtualDisk[stream->blockno].data[stream->pos-1];
-
-            stream->pos++;
+             stream->pos++;
             if(c_to_return == 255)
                 return -1;
+            printf("stream-> pos :%c",c_to_return);
+
             return c_to_return;
         }
 }
